@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="/javascripts/angular.js"></script>
+</head>
+<body>
+    <center>
+    <div ng-app="studentRecordApp" ng-controller="studentRecordCtrl">
+        <form>
+            <table>
+                <tr>
+                    <td>
+                        <input type="hidden" ng-model="_id">
+                    </td>
+                </tr>
+                <tr>
+                    <td>Name</td>
+                    <td><input type="text" ng-model="name"></td>
+                </tr>
+                <tr>
+                    <td>Roll Number</td>
+                    <td><input type="text" ng-model="rollNo"></td>
+                </tr>
+                <tr>
+                    <td>Age</td>
+                    <td><input type="text" ng-model="age"></td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td>
+                        <button ng-click="save()">Save</button>
+                        <button ng-click="clear()">Clear</button>
+                    </td>
+                </tr>
+            </table>
+        </form>
+        <br>
+        <table border="1px">
+            <tr ng-repeat="record in myData">
+                <td>{{record.name}}</td>
+                <td>{{record.rollNo}}</td>
+                <td>{{record.age}}</td>
+                <td><button ng-click="edit(record._id, record.name, record.rollNo, record.age)">EDIT</button></td>
+                <td><button>DELETE</button></td>
+            </tr>
+        </table>
+    </div>
+    </center>
+    <script>
+        let app = angular.module('studentRecordApp',[]);
+        app.controller('studentRecordCtrl',function ($scope, $http){
+
+            $scope._id = '';
+            $scope.name = '';
+            $scope.rollNo = '';
+            $scope.age = '';
+
+            /*$scope.myData = [{'name': 'ok', 'rollNo':'lmao','age':'20'}];
+            $scope.myData.push({'name': 'ok1', 'rollNo':'lmao1','age':'21'})*/
+            $http.get('http://localhost:3000/student_record/get-studentRecord').then((response)=>{
+                console.log(response.data);
+                $scope.myData = response.data;
+            });
+
+            $scope.clear = function () {
+                $scope._id = '';
+                $scope.name = '';
+                $scope.rollNo = '';
+                $scope.age = '';
+            }
+
+            $scope.edit = function (_id, name, rollNo, age) {
+                $scope._id = _id;
+                $scope.name = name;
+                $scope.rollNo = rollNo;
+                $scope.age = age;
+            }
+
+            $scope.save = function(){
+                if($scope._id.length > 0){
+                    //edit
+                    const studentRecord = {
+                        _id: $scope._id,
+                        name: $scope.name,
+                        rollNo: $scope.rollNo,
+                        age: $scope.age
+                    }
+                    $http.post('http://localhost:3000/student_record/update-studentRecord',studentRecord)
+                        .then((response)=>{
+                            if(response.data.info == 'Record Updated'){
+                                console.log(response.data);
+                                for(let i = 0; i < $scope.myData.length; i++ ){
+                                    if($scope.myData[i]._id == $scope._id){
+                                        $scope.myData[i].name = $scope.name;
+                                        $scope.myData[i].rollNo = $scope.rollNo;
+                                        $scope.myData[i].age = $scope.age;
+                                    }
+                                }
+                            }
+
+                        });
+                }else{
+                    //add
+                    const studentRecord = {
+                        _id: '',
+                        name: $scope.name,
+                        rollNo: $scope.rollNo,
+                        age: $scope.age
+                    }
+                    $http.post('http://localhost:3000/student_record/add-studentRecord',studentRecord)
+                        .then((response)=>{
+                            if(response.data.info == 'Record added'){
+                                alert('Added')
+                                console.log(response.data);
+                                studentRecord._id = response.data.obj._id;
+                                $scope.myData.push(studentRecord);
+                            }
+                        });
+                }
+            }
+        });
+    </script>
+</body>
+</html>
